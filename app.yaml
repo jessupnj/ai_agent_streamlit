@@ -8,3 +8,5 @@ command:
 env:
   - name: DATABRICKS_TOKEN
     valueFrom: databricks_token_secret
+  - name: DATABRICKS_HOST
+    value: "https://dbc-0726d26f-3749.cloud.databricks.com"
