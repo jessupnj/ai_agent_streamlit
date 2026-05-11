@@ -1,10 +1,26 @@
-import streamlit as st
+import os
 import json
+import streamlit as st
 from databricks.sdk import WorkspaceClient
-from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
 
-# Initialize the Databricks SDK client (auto-authenticates in Databricks Apps)
-w = WorkspaceClient()
+# --- Streamlit UI must be configured first ---
+st.set_page_config(
+    page_title="Nashville Airbnb Agent",
+    page_icon="🎸",
+    layout="centered",
+)
+
+# Read credentials from environment variables (injected from Databricks secret)
+token = os.getenv("DATABRICKS_TOKEN")
+host = os.getenv("DATABRICKS_HOST")
+
+# Initialize the client using the injected environment variables
+try:
+    w = WorkspaceClient(host=host, token=token)
+    st.success(f"Connected as: {w.current_user.me().user_name}")
+except Exception as e:
+    st.error(f"Authentication failed: {e}")
+    st.stop()
 
 ENDPOINT_NAME = "agents_isa632_7474656346303369-jessupnj-nashville_model"
 
@@ -38,13 +54,7 @@ def get_agent_response(user_message: str, conversation_history: list) -> str:
         return json.dumps(response.as_dict(), indent=2)
 
 
-# --- Streamlit UI ---
-st.set_page_config(
-    page_title="Nashville Airbnb Agent",
-    page_icon="🎸",
-    layout="centered",
-)
-
+# --- Chat UI ---
 st.title("🎸 Nashville Airbnb Agent")
 st.caption("Ask questions about improving your Nashville Airbnb listing")
 
