@@ -93,10 +93,9 @@ with st.sidebar:
         This app connects to the **Nashville Airbnb Agent** 
         serving endpoint on Databricks.
         
-        **Capabilities:**
-        - Airbnb listing improvement suggestions
-        - Nashville market insights
-        - Review optimization tips
+        **Sample Questions:**
+        - I'm thinking about adding a hot tub to my listing. Is this a good idea?
+        - Why do guests like the airbnbs they stay at in Nashville?
         """
     )
     if st.button("Clear Chat History"):

@@ -10,3 +10,15 @@ env:
     valueFrom: databricks_token_secret
   - name: DATABRICKS_HOST
     value: "https://dbc-0726d26f-3749.cloud.databricks.com"
+  - name: SERVING_ENDPOINT_NAME
+    valueFrom: serving_endpoint
+
+resources:
+  - name: serving_endpoint
+    serving_endpoint:
+      name: agents_isa632_7474656346303369-jessupnj-nashville_model
+      permission: CAN_QUERY
+  - name: databricks_token_secret
+    secret:
+      scope: nashville_agent_app
+      key: databricks_token
