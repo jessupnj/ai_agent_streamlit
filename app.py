@@ -1,7 +1,7 @@
 import os
 import json
+import requests
 import streamlit as st
-from databricks.sdk import WorkspaceClient
 
 # --- Streamlit UI must be configured first ---
 st.set_page_config(
@@ -10,23 +10,24 @@ st.set_page_config(
     layout="centered",
 )
 
-# Read credentials from environment variables (injected from Databricks secret)
-token = os.getenv("DATABRICKS_TOKEN")
-host = os.getenv("DATABRICKS_HOST")
-
-# Initialize the client using the injected environment variables
-try:
-    w = WorkspaceClient(host=host, token=token)
-    st.success(f"Connected as: {w.current_user.me().user_name}")
-except Exception as e:
-    st.error(f"Authentication failed: {e}")
-    st.stop()
-
+# Read token from environment variable (injected from Databricks secret at runtime)
+DATABRICKS_TOKEN = os.getenv("DATABRICKS_TOKEN")
+DATABRICKS_HOST = "https://dbc-0726d26f-3749.cloud.databricks.com"
 ENDPOINT_NAME = "agents_isa632_7474656346303369-jessupnj-nashville_model"
+ENDPOINT_URL = f"{DATABRICKS_HOST}/serving-endpoints/{ENDPOINT_NAME}/invocations"
+
+if not DATABRICKS_TOKEN:
+    st.error("DATABRICKS_TOKEN is not set. Please configure the secret resource in your app deployment.")
+    st.stop()
 
 
 def get_agent_response(user_message: str, conversation_history: list) -> str:
     """Send a message to the Nashville agent endpoint and return the response."""
+    headers = {
+        "Authorization": f"Bearer {DATABRICKS_TOKEN}",
+        "Content-Type": "application/json",
+    }
+
     # Build the input with conversation history
     messages = []
     for msg in conversation_history:
@@ -34,15 +35,14 @@ def get_agent_response(user_message: str, conversation_history: list) -> str:
     messages.append({"role": "user", "content": user_message})
 
     payload = {"input": messages}
+    response = requests.post(url=ENDPOINT_URL, headers=headers, data=json.dumps(payload))
 
-    response = w.serving_endpoints.query(
-        name=ENDPOINT_NAME,
-        inputs=[payload],
-    )
+    if response.status_code != 200:
+        return f"Error: Request failed with status {response.status_code}. {response.text}"
 
     # Extract text from the agent response
     try:
-        result = response.as_dict()
+        result = response.json()
         output = result["output"]
         for item in output:
             if item.get("type") == "message":
@@ -51,7 +51,7 @@ def get_agent_response(user_message: str, conversation_history: list) -> str:
                         return content_block["text"]
         return json.dumps(result, indent=2)
     except (KeyError, IndexError, TypeError):
-        return json.dumps(response.as_dict(), indent=2)
+        return json.dumps(result, indent=2)
 
 
 # --- Chat UI ---
